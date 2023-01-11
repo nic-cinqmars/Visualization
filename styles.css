@@ -1,0 +1,28 @@
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+html body {
+    background-color: lightslategrey;
+}
+
+body #grid-container {
+    margin: 20vh auto;
+    background-color: dimgray;
+    border: 0.2vw solid #5a5656;
+    height: 60vh;
+    width: 70vw;
+    display: grid;
+    padding: 5px;
+    align-items: center;
+    justify-items: center;
+    grid-template-columns: repeat(25, 1fr);
+    grid-template-rows: repeat(15, 1fr);
+}
+
+#grid-container .grid-square {
+    background-color: lightgray;
+    width: 2vw;
+    height: 2vw;
+}
