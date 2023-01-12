@@ -120,6 +120,8 @@ function squareClicked(event)
 
 function mouseOutSquare(event)
 {
+    if (isTimeout)
+        return;
     let square = event.currentTarget;
     square.style.backgroundColor = "";
 }
@@ -137,7 +139,12 @@ function mouseOverSquare(event)
 
 async function breadthFirstSearch()
 {
-    gridSquares.forEach(row => row.forEach(square => square.classList.remove("path-square")));
+    gridSquares.forEach(row => {
+        row.forEach(square => {
+            square.classList.remove("path-square");
+            square.style.backgroundColor = "";
+        });
+    });
     let startPos;
     let currentPos;
     let endPos;
@@ -170,6 +177,7 @@ async function breadthFirstSearch()
     {
         let solved = false;
         let frontier = [startPos];
+        let cameFrom = [];
         let index = 0;
         while (!solved)
         {
@@ -190,19 +198,58 @@ async function breadthFirstSearch()
 
                     if (neighbor.x === endPos.x && neighbor.y === endPos.y)
                     {
+                        cameFrom.push(frontier[i]);
                         frontier.push(neighbor);
                         solved = true;
+                        console.log(cameFrom);
+                        console.log(frontier);
                     }
                     if (!frontier.some(pos => pos.x === neighbor.x && pos.y ===  neighbor.y))
                     {
+                        cameFrom.push(frontier[i]);
                         frontier.push(neighbor);
                     }
                 });
             }
-            frontier.forEach((pos) => {
-                gridSquares[pos.x][pos.y].style.backgroundColor = "pink";
-            });
+            for (let i = 0; i < frontier.length; i++)
+            {
+                if (i > 0 && !solved)
+                {
+                    gridSquares[frontier[i].x][frontier[i].y].style.backgroundColor = "pink";
+                }
+                if (solved && i > 0 && i !== frontier.length - 1)
+                {
+                    gridSquares[frontier[i].x][frontier[i].y].backgroundColor = "pink";
+                }
+
+            }
             await timer(200);
+
+            if (solved)
+            {
+                let path = [];
+                let index = cameFrom.length - 1;
+                while (index !== 0)
+                {
+                    let lastPos = cameFrom[index];
+                    path.push(lastPos);
+                    let foundIndex = frontier.findIndex(pos => pos.x === lastPos.x && pos.y === lastPos.y);
+                    if (foundIndex !== -1)
+                    {
+                        index = foundIndex;
+                    }
+                }
+
+                for (let i = 0; i < path.length; i++)
+                {
+                    let pos = path[path.length - 1 - i];
+                    gridSquares[pos.x][pos.y].style.backgroundColor = "";
+                    gridSquares[pos.x][pos.y].classList.add("path-square");
+                    await timer(ANIMATION_SPEED);
+                }
+
+                gridSquares.forEach(row => row.forEach(square => square.style.backgroundColor = ""));
+            }
         }
     }
 }
