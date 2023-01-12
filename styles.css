@@ -7,22 +7,104 @@ html body {
     background-color: lightslategrey;
 }
 
-body #grid-container {
+body #visual-container {
     margin: 20vh auto;
-    background-color: dimgray;
-    border: 0.2vw solid #5a5656;
-    height: 60vh;
-    width: 70vw;
-    display: grid;
-    padding: 5px;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-items: center;
-    grid-template-columns: repeat(25, 1fr);
-    grid-template-rows: repeat(15, 1fr);
+    width: 70vw;
+    gap: 0.5vw
 }
 
-#grid-container .grid-square {
-    background-color: lightgray;
-    width: 2vw;
-    height: 2vw;
+body #visual-container #controls-container {
+    align-self: flex-end;
+    display: flex;
+    gap: 0.5vw;
 }
+
+body #visual-container #controls-container .control {
+    box-sizing: border-box;
+    all: unset;
+    cursor: pointer;
+    border-radius: 100%;
+    width: 1.5vw;
+    height: 1.5vw;
+    border: 0.2vw solid #5a5656;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body #visual-container #controls-container #block-button:hover:not(.selected) {
+    border: 0.3vw solid red;
+}
+
+body #visual-container #block-button.selected {
+    border: 0.3vw solid red;
+}
+body #visual-container #block-button.selected i {
+    color: red;
+}
+
+body #visual-container #controls-container #start-button:hover:not(.selected) {
+    border: 0.3vw solid yellow;
+}
+
+body #visual-container #start-button.selected {
+    border: 0.3vw solid yellow;
+}
+body #visual-container #start-button.selected i {
+    color: yellow;
+}
+
+body #visual-container #controls-container #end-button:hover:not(.selected) {
+    border: 0.3vw solid green;
+}
+
+body #visual-container #end-button.selected {
+    border: 0.3vw solid green;
+}
+body #visual-container #end-button.selected i {
+    color: green;
+}
+
+body #visual-container #grid-container {
+    background-color: dimgray;
+    border: 0.2vw solid #5a5656;
+    box-sizing: border-box;
+    height: 30vw;
+    width: 70vw;
+    display: grid;
+    padding: 0.5vw;
+    align-items: center;
+    justify-items: center;
+    grid-template-columns: repeat(40, 1fr);
+    grid-template-rows: repeat(20, 1fr);
+    grid-gap: 0.5vw;
+}
+
+#visual-container #grid-container .grid-square {
+    box-sizing: border-box;
+    border: 0.15vw groove #171717;
+    background-color: #333333;
+    width: 100%;
+    aspect-ratio: 1/1;
+    cursor: pointer;
+}
+
+#visual-container #grid-container .grid-square.blocked-square {
+    background-color: red;
+}
+
+#visual-container #grid-container .grid-square.start-square {
+    background-color: yellow;
+}
+
+#visual-container #grid-container .grid-square.end-square {
+    background-color: green;
+}
+
+#visual-container #grid-container .grid-square.path-square {
+    background-color: blue;
+}
+
