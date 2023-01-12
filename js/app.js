@@ -1,15 +1,17 @@
 window.onload = init;
 
-const ANIMATION_SPEED = 20;
+const ANIMATION_SPEED = 10;
 const GRID_WIDTH = 40;
 const GRID_HEIGHT = 17;
 const NUM_SQUARES = GRID_WIDTH * GRID_HEIGHT;
 let gridContainer;
 let gridSquares = [[]];
+let pathSquares = [];
 let controls;
 let currentControlColor = "red";
 let startSquare;
 let endSquare;
+let mouseDragging = false;
 
 let isTimeout = false;
 
@@ -20,7 +22,8 @@ function init()
 {
     gridContainer = document.getElementById("grid-container");
     controls = document.querySelectorAll(".control");
-    controls.forEach((control) => control.addEventListener("click", controlClicked))
+    controls.forEach((control) => control.addEventListener("click", controlClicked));
+    document.body.addEventListener("mouseup", mouseUp);
     loadBoard();
 }
 
@@ -37,6 +40,7 @@ function loadBoard()
         let gridSquare = document.createElement("div");
         gridSquare.classList.add("grid-square");
         gridSquare.addEventListener("click", squareClicked);
+        gridSquare.addEventListener("mousedown", mouseDownSquare);
         gridSquare.addEventListener("mouseover", mouseOverSquare);
         gridSquare.addEventListener("mouseout", mouseOutSquare);
         if (gridSquares[i - GRID_WIDTH * yIndex] === undefined)
@@ -80,35 +84,25 @@ function squareClicked(event)
 {
     if (isTimeout)
         return;
+
+    if (pathSquares !== undefined)
+    {
+        pathSquares.forEach(square => square.classList.remove("path-square"));
+        pathSquares = undefined;
+    }
+
     let square = event.currentTarget;
+
     switch (currentControlColor)
     {
         case "red" :
-            if (square.classList.contains("blocked-square"))
-            {
-                square.classList.remove("blocked-square");
-                mouseOutSquare(event);
-            }
-            else
-            {
-                square.classList.add("blocked-square");
-            }
+            switchSquareState(square, "red");
             break;
         case "yellow" :
-            square.classList.add("start-square");
-            if (startSquare !== undefined)
-            {
-                startSquare.classList.remove("start-square");
-            }
-            startSquare = square;
+            switchSquareState(square, "yellow");
             break;
         case "green" :
-            square.classList.add("end-square");
-            if (endSquare !== undefined)
-            {
-                endSquare.classList.remove("end-square");
-            }
-            endSquare = square;
+            switchSquareState(square, "green");
             break;
     }
 
@@ -117,6 +111,64 @@ function squareClicked(event)
         breadthFirstSearch();
     }
 }
+
+function switchSquareState(square, state)
+{
+    if (square.classList.contains("blocked-square"))
+    {
+        square.classList.remove("blocked-square");
+    }
+    else if (state === "red")
+    {
+        square.classList.add("blocked-square");
+    }
+
+    if (square.classList.contains("start-square"))
+    {
+        square.classList.remove("start-square");
+        startSquare = undefined;
+    }
+    else if (state === "yellow")
+    {
+        if (startSquare !== undefined)
+        {
+            startSquare.classList.remove("start-square");
+        }
+
+        square.classList.add("start-square");
+        startSquare = square;
+    }
+
+    if (square.classList.contains("end-square"))
+    {
+        square.classList.remove("end-square");
+        endSquare = undefined;
+    }
+    else if (state === "green")
+    {
+        if (endSquare !== undefined)
+        {
+            endSquare.classList.remove("end-square");
+        }
+
+        square.classList.add("end-square");
+        endSquare = square;
+    }
+}
+
+function mouseDownSquare(event)
+{
+    event.preventDefault();
+    if (isTimeout)
+        return;
+    mouseDragging = true;
+}
+
+function mouseUp()
+{
+    mouseDragging = false;
+}
+
 
 function mouseOutSquare(event)
 {
@@ -135,16 +187,15 @@ function mouseOverSquare(event)
     {
         square.style.backgroundColor = currentControlColor;
     }
+
+    if (mouseDragging)
+    {
+        squareClicked(event);
+    }
 }
 
 async function breadthFirstSearch()
 {
-    gridSquares.forEach(row => {
-        row.forEach(square => {
-            square.classList.remove("path-square");
-            square.style.backgroundColor = "";
-        });
-    });
     let startPos;
     let currentPos;
     let endPos;
@@ -175,14 +226,17 @@ async function breadthFirstSearch()
     }
     else
     {
+        isTimeout = true;
         let solved = false;
         let frontier = [startPos];
-        let cameFrom = [];
-        let index = 0;
+        let cameFrom = new Map();
+        cameFrom.set(startPos, undefined);
+        let startIndex = 0;
         while (!solved)
         {
             let length = frontier.length;
-            for (let i = 0; i < length; i++)
+            let newNeighborsCount = 0;
+            for (let i = startIndex; i < length; i++)
             {
                 if (solved)
                 {
@@ -198,20 +252,27 @@ async function breadthFirstSearch()
 
                     if (neighbor.x === endPos.x && neighbor.y === endPos.y)
                     {
-                        cameFrom.push(frontier[i]);
+                        cameFrom.set(endPos, frontier[i]);
                         frontier.push(neighbor);
+                        newNeighborsCount++;
                         solved = true;
-                        console.log(cameFrom);
-                        console.log(frontier);
                     }
                     if (!frontier.some(pos => pos.x === neighbor.x && pos.y ===  neighbor.y))
                     {
-                        cameFrom.push(frontier[i]);
+                        newNeighborsCount++;
+                        cameFrom.set(neighbor, frontier[i]);
                         frontier.push(neighbor);
                     }
                 });
             }
-            for (let i = 0; i < frontier.length; i++)
+
+            if (newNeighborsCount === 0)
+            {
+                alert("Impossible to find path.");
+                break;
+            }
+
+            for (let i = startIndex; i < frontier.length; i++)
             {
                 if (i > 0 && !solved)
                 {
@@ -221,36 +282,36 @@ async function breadthFirstSearch()
                 {
                     gridSquares[frontier[i].x][frontier[i].y].backgroundColor = "pink";
                 }
-
             }
-            await timer(200);
+            await timer(ANIMATION_SPEED);
+            startIndex = length;
 
             if (solved)
             {
-                let path = [];
-                let index = cameFrom.length - 1;
-                while (index !== 0)
+                pathSquares = [];
+                let currentPos = endPos;
+                while (currentPos.x !== startPos.x || currentPos.y !== startPos.y)
                 {
-                    let lastPos = cameFrom[index];
-                    path.push(lastPos);
-                    let foundIndex = frontier.findIndex(pos => pos.x === lastPos.x && pos.y === lastPos.y);
-                    if (foundIndex !== -1)
-                    {
-                        index = foundIndex;
-                    }
+                    pathSquares.push(gridSquares[currentPos.x][currentPos.y]);
+                    currentPos = cameFrom.get(currentPos);
                 }
+                pathSquares.push(gridSquares[currentPos.x][currentPos.y]);
 
-                for (let i = 0; i < path.length; i++)
+                for (let i = 1; i < pathSquares.length - 1; i++)
                 {
-                    let pos = path[path.length - 1 - i];
-                    gridSquares[pos.x][pos.y].style.backgroundColor = "";
-                    gridSquares[pos.x][pos.y].classList.add("path-square");
-                    await timer(ANIMATION_SPEED);
+                    pathSquares[pathSquares.length - 1 - i].style.backgroundColor = "";
+                    pathSquares[pathSquares.length - 1 - i].classList.add("path-square");
+                    await timer(50);
                 }
 
                 gridSquares.forEach(row => row.forEach(square => square.style.backgroundColor = ""));
             }
         }
+        if (!solved)
+        {
+            gridSquares.forEach(row => row.forEach(square => square.style.backgroundColor = ""));
+        }
+        isTimeout = false;
     }
 }
 
